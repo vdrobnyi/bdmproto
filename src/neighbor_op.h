@@ -88,19 +88,24 @@ class NeighborOp {
         cells->vectors());
 
 // Tree search
-size_t *counter = new size_t[cells->elements()]; 
-spatial_tree_node<size_t> * tree = new octree_node<size_t>(bound(0.0, 0.0, 0.0, 1.0, 1.0, 1.0), 100, 100);
+std::cout << "number of elements " << cells->elements() << std::endl;
+std::cout << "Faza" << std::endl;
+spatial_tree_node<size_t> * tree = new octree_node<size_t>(bound(-1000, -1000, -1000, 1000, 1000, 1000), 100, 100);
+size_t *counter = new size_t[cells->elements()];
+for (size_t i = 0; i < cells->elements(); i++)
+  counter[i] = 0;
 for (size_t i = 0; i < cells->elements(); i++)
 {
   auto cell = cells->GetScalar(i);
   const auto& position = cell.GetPosition();  
   const VcBackend::real_t query_pt[3] = {};
   point pos(position[0][0], position[1][0], position[2][0]);
+  std::cout << position[0][0] << ", " << position[1][0] << ", " << position[2][0] << std::endl;
   tree->put(pos, i);
 }
-
+std::cout << "Maza " << distance_ << std::endl;
 auto tree_neighbors = tree->get_neighbors(distance_);
-
+std::cout << "Sista " << tree_neighbors->size() << std::endl;
 for (int i = 0; i < tree_neighbors->size(); i++)
 {
   size_t neighbor_a = tree_neighbors->at(i).first.second;
@@ -110,10 +115,16 @@ for (int i = 0; i < tree_neighbors->size(); i++)
   const auto vector_idx_b = neighbor_b / VcBackend::kVecLen;
   const auto scalar_idx_b = neighbor_b % VcBackend::kVecLen;
 
+  if (neighbor_a >= cells->elements() || neighbor_b >= cells->elements())
+    std::cout << "Ay-ay-ay" << std::endl;
+  std::cout << neighbor_a << ", " << neighbor_b << ", (" << counter[neighbor_a] << ", " << counter[neighbor_b] << std::endl;
+  std::cout << "?" << std::endl;
   neighbors[vector_idx_a][scalar_idx_a][counter[neighbor_a]++] = neighbor_b;
+  std::cout << "!" << std::endl;
   neighbors[vector_idx_b][scalar_idx_b][counter[neighbor_b]++] = neighbor_a;
+  std::cout << "¡" << std::endl;
 }
-
+std::cout << "Braza" << std::endl;
 for (size_t i = 0; i < cells->elements(); i++)
 {
   const auto vector_idx = i / VcBackend::kVecLen;
