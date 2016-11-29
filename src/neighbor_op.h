@@ -87,8 +87,32 @@ class NeighborOp {
     std::vector<std::array<bdm::array<int, 8>, VcBackend::kVecLen> > neighbors(
         cells->vectors());
 
+// Tree search
+
+spatial_tree_node<size_t> * tree = new octree_node<size_t>(Bound(0, 0, 1, 1), 100, 100);
+for (size_t i = 0; i < cells->elements(); i++)
+{
+  auto cell = cells->GetScalar(i);
+  const auto& position = cell.GetPosition();  
+  const VcBackend::real_t query_pt[3] = {};
+  point pos(position[0][0], position[1][0], position[2][0]);
+  tree->put(pos, i);
+}
+
+auto neighbors = tree->get_neighbors(distance_);
+
+for (int i = 0; i < neighbors->size(); i++)
+{
+  size_t neighbor_a = neighbors->at(i).first.second;
+  size_t neighbor_b = neighbors->at(i).second.second;
+}
+
+delete neighbors;
+
+// End of tree search
+
 // calc neighbors
-// std::cout << "number of elements " << cells->elements() << std::endl;
+std::cout << "number of elements " << cells->elements() << std::endl;
 #pragma omp parallel for
     for (size_t i = 0; i < cells->elements(); i++) {
       const auto vector_idx = i / VcBackend::kVecLen;
@@ -124,8 +148,6 @@ class NeighborOp {
       }
       neighbors[vector_idx][scalar_idx] = std::move(i_neighbors);
     }
-
-    spatial_tree_node<size_t> * tree = new octree_node<size_t>(Bound(0, 0, 1, 1), 100, 100);
 
     // update neighbors
 #pragma omp parallel for
