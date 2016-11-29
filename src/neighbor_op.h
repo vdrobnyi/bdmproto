@@ -88,8 +88,8 @@ class NeighborOp {
         cells->vectors());
 
 // Tree search
-
-spatial_tree_node<size_t> * tree = new octree_node<size_t>(Bound(0, 0, 1, 1), 100, 100);
+size_t *counter = new size_t[cells->elements()]; 
+spatial_tree_node<size_t> * tree = new octree_node<size_t>(bound(0.0, 0.0, 0.0, 1.0, 1.0, 1.0), 100, 100);
 for (size_t i = 0; i < cells->elements(); i++)
 {
   auto cell = cells->GetScalar(i);
@@ -99,55 +99,69 @@ for (size_t i = 0; i < cells->elements(); i++)
   tree->put(pos, i);
 }
 
-auto neighbors = tree->get_neighbors(distance_);
+auto tree_neighbors = tree->get_neighbors(distance_);
 
-for (int i = 0; i < neighbors->size(); i++)
+for (int i = 0; i < tree_neighbors->size(); i++)
 {
-  size_t neighbor_a = neighbors->at(i).first.second;
-  size_t neighbor_b = neighbors->at(i).second.second;
+  size_t neighbor_a = tree_neighbors->at(i).first.second;
+  size_t neighbor_b = tree_neighbors->at(i).second.second;
+  const auto vector_idx_a = neighbor_a / VcBackend::kVecLen;
+  const auto scalar_idx_a = neighbor_a % VcBackend::kVecLen;
+  const auto vector_idx_b = neighbor_b / VcBackend::kVecLen;
+  const auto scalar_idx_b = neighbor_b % VcBackend::kVecLen;
+
+  neighbors[vector_idx_a][scalar_idx_a][counter[neighbor_a]++] = neighbor_b;
+  neighbors[vector_idx_b][scalar_idx_b][counter[neighbor_b]++] = neighbor_a;
 }
 
-delete neighbors;
+for (size_t i = 0; i < cells->elements(); i++)
+{
+  const auto vector_idx = i / VcBackend::kVecLen;
+  const auto scalar_idx = i % VcBackend::kVecLen;
+  neighbors[vector_idx][scalar_idx].SetSize(counter[i]);
+}
 
+delete tree_neighbors;
+delete[] counter;
 // End of tree search
 
 // calc neighbors
-std::cout << "number of elements " << cells->elements() << std::endl;
-#pragma omp parallel for
-    for (size_t i = 0; i < cells->elements(); i++) {
-      const auto vector_idx = i / VcBackend::kVecLen;
-      const auto scalar_idx = i % VcBackend::kVecLen;
+// std::cout << "number of elements " << cells->elements() << std::endl;
+// #pragma omp parallel for
+//     for (size_t i = 0; i < cells->elements(); i++) {
+//       const auto vector_idx = i / VcBackend::kVecLen;
+//       const auto scalar_idx = i % VcBackend::kVecLen;
 
-      // fixme make param
-      // according to roman 50 - 100 micron
-      const VcBackend::real_t search_radius =
-          static_cast<VcBackend::real_t>(distance_);
+//       // fixme make param
+//       // according to roman 50 - 100 micron
+//       const VcBackend::real_t search_radius =
+//           static_cast<VcBackend::real_t>(distance_);
 
-      std::vector<std::pair<size_t, VcBackend::real_t> > ret_matches;
+//       std::vector<std::pair<size_t, VcBackend::real_t> > ret_matches;
 
-      nanoflann::SearchParams params;
-      params.sorted = false;
+//       nanoflann::SearchParams params;
+//       params.sorted = false;
 
-      auto cell = cells->GetScalar(i);
-      const auto& position = cell.GetPosition();
-      const VcBackend::real_t query_pt[3] = {position[0][0], position[1][0],
-                                             position[2][0]};
+//       auto cell = cells->GetScalar(i);
+//       const auto& position = cell.GetPosition();
+//       const VcBackend::real_t query_pt[3] = {position[0][0], position[1][0],
+//                                              position[2][0]};
 
-      // calculate neighbors
-      const size_t n_matches =
-          index.radiusSearch(&query_pt[0], search_radius, ret_matches, params);
+//       // calculate neighbors
+//       const size_t n_matches =
+//           index.radiusSearch(&query_pt[0], search_radius, ret_matches, params);
 
-      // transform result (change data structure - remove self from list)
-      bdm::array<int, 8> i_neighbors;
-      i_neighbors.SetSize(n_matches - 1);
-      size_t counter = 0;
-      for (size_t j = 0; j < n_matches; j++) {
-        if (ret_matches[j].first != i) {
-          i_neighbors[counter++] = ret_matches[j].first;
-        }
-      }
-      neighbors[vector_idx][scalar_idx] = std::move(i_neighbors);
-    }
+//       // transform result (change data structure - remove self from list)
+//       bdm::array<int, 8> i_neighbors;
+//       i_neighbors.SetSize(n_matches - 1);
+//       size_t counter = 0;
+//       for (size_t j = 0; j < n_matches; j++) {
+//         if (ret_matches[j].first != i) {
+//           i_neighbors[counter++] = ret_matches[j].first;
+//         }
+//       }
+//       neighbors[vector_idx][scalar_idx] = std::move(i_neighbors);
+//     }
 
     // update neighbors
 #pragma omp parallel for
