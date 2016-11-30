@@ -4,7 +4,7 @@
 #include <iostream>
 #include <nanoflann.h>
 
-#include "spatial/octree.hpp"
+#include "spatial/kd_tree.h"
 
 namespace bdm {
 
@@ -90,7 +90,7 @@ class NeighborOp {
 // Tree search
 std::cout << "number of elements " << cells->elements() << std::endl;
 std::cout << "Faza" << std::endl;
-spatial_tree_node<size_t> * tree = new octree_node<size_t>(bound(-1000, -1000, -1000, 1000, 1000, 1000), 100, 100);
+spatial_tree_node<size_t> * tree = new kd_tree_node<size_t>(bound(-1000, -1000, -1000, 1000, 1000, 1000), 100, 100, 0);
 std::vector<size_t> neighbor_counter(512);
 for (size_t i = 0; i < cells->elements(); i++)
 {
