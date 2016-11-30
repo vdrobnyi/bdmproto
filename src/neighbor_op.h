@@ -91,7 +91,7 @@ class NeighborOp {
 std::cout << "number of elements " << cells->elements() << std::endl;
 std::cout << "Faza" << std::endl;
 spatial_tree_node<size_t> * tree = new octree_node<size_t>(bound(-1000, -1000, -1000, 1000, 1000, 1000), 100, 100);
-std::array<size_t, 512> neighbor_counter;
+std::vector<size_t> neighbor_counter(512);
 for (size_t i = 0; i < cells->elements(); i++)
 {
   neighbor_counter[i] = 0;
@@ -115,7 +115,7 @@ for (int i = 0; i < tree_neighbors->size(); i++)
   const auto vector_idx_b = neighbor_b / VcBackend::kVecLen;
   const auto scalar_idx_b = neighbor_b % VcBackend::kVecLen;
 
-  // std::cout << neighbor_a << ", " << neighbor_b << ", (" << neighbor_counter[neighbor_a] << ", " << neighbor_counter[neighbor_b] << std::endl;
+  std::cout << neighbor_a << ", " << neighbor_b << ", (" << neighbor_counter[neighbor_a] << ", " << neighbor_counter[neighbor_b] << std::endl;
   // std::cout << "?" << std::endl;
   neighbors[vector_idx_a][scalar_idx_a][neighbor_counter[neighbor_a]++] = neighbor_b;
   // std::cout << "!" << std::endl;
@@ -130,8 +130,8 @@ for (size_t i = 0; i < cells->elements(); i++)
   neighbors[vector_idx][scalar_idx].SetSize(neighbor_counter[i]);
 }
 std::cout << "End" << std::endl;
-//delete tree_neighbors;
-//delete tree;
+delete tree_neighbors;
+delete tree;
 std::cout << "Free" << std::endl;
 // End of tree search
 

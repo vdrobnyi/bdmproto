@@ -96,46 +96,32 @@ void spatial_tree_node<T>::get_neighbors_(
     else
     {
         spatial_tree_node<T> ** a_nodes, ** b_nodes;
-        bool a_allocated = false, b_allocated = false;
         int a_size = 0, b_size = 0;
         if (A->is_leaf())
         {
-            a_nodes = new spatial_tree_node<T> *[1];
-            a_nodes[0] = A;
-            a_size = 1;
-            a_allocated = true;
+            b_nodes = B->get_children();
+            for (int i = 0; i < B->get_children_size(); i++)
+                if (A->get_bound().distance(b_nodes[i]->get_bound()) <= distance)
+                    get_neighbors_(A, b_nodes[i], distance, result);
         }
+        else if (B->is_leaf())
+        {
+            a_nodes = A->get_children();
+            for (int i = 0; i < A->get_children_size(); i++)
+                if (a_nodes[i]->get_bound().distance(B->get_bound()) <= distance)
+                    get_neighbors_(a_nodes[i], B, distance, result);
+        } 
         else
         {
             a_nodes = A->get_children();
-            a_size = A->get_children_size();
-            a_allocated = false;
-        }
-        
-        if (B->is_leaf())
-        {
-            b_nodes = new spatial_tree_node<T> *[1];
-            b_nodes[0] = B;
-            b_size = 1;
-            b_allocated = true;
-        }
-        else
-        {
             b_nodes = B->get_children();
+            a_size = A->get_children_size();
             b_size = B->get_children_size();
-            b_allocated = false;
-        }
-        
-        bool is_same = A == B;
-        for (int i = 0; i < a_size; i++)
-        {
-            for (int j = is_same ? (i) : 0; j < b_size; j++)
-            {
-                if (a_nodes[i]->get_bound().distance(b_nodes[j]->get_bound()) <= distance)
-                {
-                    get_neighbors_(a_nodes[i], b_nodes[j], distance, result);
-                }
-            }
+            bool is_same = A == B;
+            for (int i = 0; i < a_size; i++)
+                for (int j = is_same ? (i) : 0; j < b_size; j++)
+                    if (a_nodes[i]->get_bound().distance(b_nodes[j]->get_bound()) <= distance)
+                        get_neighbors_(a_nodes[i], b_nodes[j], distance, result);
         }
     }
 }
