@@ -91,20 +91,20 @@ class NeighborOp {
 std::cout << "number of elements " << cells->elements() << std::endl;
 std::cout << "Faza" << std::endl;
 spatial_tree_node<size_t> * tree = new octree_node<size_t>(bound(-1000, -1000, -1000, 1000, 1000, 1000), 100, 100);
-size_t *counter = new size_t[cells->elements()];
-for (size_t i = 0; i < cells->elements(); i++)
-  counter[i] = 0;
+std::array<size_t, 512> neighbor_counter;
 for (size_t i = 0; i < cells->elements(); i++)
 {
+  neighbor_counter[i] = 0;
   auto cell = cells->GetScalar(i);
   const auto& position = cell.GetPosition();  
   const VcBackend::real_t query_pt[3] = {};
   point pos(position[0][0], position[1][0], position[2][0]);
-  std::cout << position[0][0] << ", " << position[1][0] << ", " << position[2][0] << std::endl;
+  // std::cout << position[0][0] << ", " << position[1][0] << ", " << position[2][0] << std::endl;
   tree->put(pos, i);
 }
 std::cout << "Maza " << distance_ << std::endl;
 auto tree_neighbors = tree->get_neighbors(distance_);
+//auto tree_neighbors = new vector<pair<pair<point, int>, pair<point, int> > >();
 std::cout << "Sista " << tree_neighbors->size() << std::endl;
 for (int i = 0; i < tree_neighbors->size(); i++)
 {
@@ -115,25 +115,24 @@ for (int i = 0; i < tree_neighbors->size(); i++)
   const auto vector_idx_b = neighbor_b / VcBackend::kVecLen;
   const auto scalar_idx_b = neighbor_b % VcBackend::kVecLen;
 
-  if (neighbor_a >= cells->elements() || neighbor_b >= cells->elements())
-    std::cout << "Ay-ay-ay" << std::endl;
-  std::cout << neighbor_a << ", " << neighbor_b << ", (" << counter[neighbor_a] << ", " << counter[neighbor_b] << std::endl;
-  std::cout << "?" << std::endl;
-  neighbors[vector_idx_a][scalar_idx_a][counter[neighbor_a]++] = neighbor_b;
-  std::cout << "!" << std::endl;
-  neighbors[vector_idx_b][scalar_idx_b][counter[neighbor_b]++] = neighbor_a;
-  std::cout << "¡" << std::endl;
+  // std::cout << neighbor_a << ", " << neighbor_b << ", (" << neighbor_counter[neighbor_a] << ", " << neighbor_counter[neighbor_b] << std::endl;
+  // std::cout << "?" << std::endl;
+  neighbors[vector_idx_a][scalar_idx_a][neighbor_counter[neighbor_a]++] = neighbor_b;
+  // std::cout << "!" << std::endl;
+  neighbors[vector_idx_b][scalar_idx_b][neighbor_counter[neighbor_b]++] = neighbor_a;
+  // std::cout << "¡" << std::endl;
 }
 std::cout << "Braza" << std::endl;
 for (size_t i = 0; i < cells->elements(); i++)
 {
   const auto vector_idx = i / VcBackend::kVecLen;
   const auto scalar_idx = i % VcBackend::kVecLen;
-  neighbors[vector_idx][scalar_idx].SetSize(counter[i]);
+  neighbors[vector_idx][scalar_idx].SetSize(neighbor_counter[i]);
 }
-
-delete tree_neighbors;
-delete[] counter;
+std::cout << "End" << std::endl;
+//delete tree_neighbors;
+//delete tree;
+std::cout << "Free" << std::endl;
 // End of tree search
 
 // calc neighbors
@@ -174,11 +173,13 @@ delete[] counter;
 //       neighbors[vector_idx][scalar_idx] = std::move(i_neighbors);
 //     }
 
+std::cout << "Update" << std::endl;
     // update neighbors
 #pragma omp parallel for
     for (size_t i = 0; i < cells->vectors(); i++) {
-      (*cells)[i].SetNeighbors(neighbors[i]);
+      (*cells)[i].SetNeighbors(std::move(neighbors[i]));
     }
+    std::cout << "End" << std::endl;
   }
 
  private:
