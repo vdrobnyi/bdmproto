@@ -40,13 +40,13 @@ public:
         this->z = z;
     }
     
-    void normalize()
-    {
-        double len = length();
-        x /= len;
-        y /= len;
-        z /= len;
-    }
+//    void normalize()
+//    {
+//        double len = length();
+//        x /= len;
+//        y /= len;
+//        z /= len;
+//    }
     
     double distance(point p)
     {

@@ -146,7 +146,7 @@ kd_tree_node<T>::~kd_tree_node()
             children[i] = nullptr;
         }
 
-    if (objects != nullptr)
+    if (is_leaf_node && objects != nullptr)
     {
         delete objects;
         objects = nullptr;
