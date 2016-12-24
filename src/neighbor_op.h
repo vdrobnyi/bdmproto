@@ -78,150 +78,57 @@ namespace bdm {
 
         template<typename daosoa>
         Vc_ALWAYS_INLINE void Compute(daosoa *cells) const {
-            typedef NanoFlannDaosoaAdapter<daosoa> NanoFlann2Daosoa;
-            const NanoFlann2Daosoa nf_cells(*cells);  // The adaptor
-
-            // construct a kd-tree index:
-            typedef KDTreeSingleIndexAdaptor<
-                    L2_Simple_Adaptor<VcBackend::real_t, NanoFlann2Daosoa>,
-                    NanoFlann2Daosoa, 3 /* dim */
-            > my_kd_tree_t;
-
-            // three dimensions; max leafs: 10
-            my_kd_tree_t index(3, nf_cells, KDTreeSingleIndexAdaptorParams(10));
-            index.buildIndex();
 
             std::vector<std::array<bdm::array<int, 8>, VcBackend::kVecLen> > neighbors(
                     cells->vectors());
 
+
             // Tree search
-            std::cout << "number of elements " << cells->elements() << "(" << cells->vectors() << ")" << std::endl;
-            std::cout << "Faza" << std::endl;
-            //spatial_tree_node<size_t> * tree = new kd_tree_node<size_t>(bound(-1000, -1000, -1000, 1000, 1000, 1000), 100, 100, 0);
             spatial_tree_node<size_t> *tree = new octree_node<size_t>(bound(-1000, -1000, -1000, 1000, 1000, 1000), 100,
                                                                       100);
-            //std::vector<size_t> neighbor_counter(512);
-            size_t *neighbor_counter = new size_t[512];
-            //size_t neighbor_counter[512];
+            size_t *neighbor_counter = new size_t[cells->elements()];
+
             for (size_t i = 0; i < cells->elements(); i++) {
                 neighbor_counter[i] = 0;
                 auto cell = cells->GetScalar(i);
                 const auto &position = cell.GetPosition();
                 const VcBackend::real_t query_pt[3] = {};
                 point pos(position[0][0], position[1][0], position[2][0]);
-                // std::cout << position[0][0] << ", " << position[1][0] << ", " << position[2][0] << std::endl;
                 tree->put(pos, i);
             }
             const VcBackend::real_t search_radius =
                     static_cast<VcBackend::real_t>(distance_);
-            std::cout << "Maza " << search_radius << std::endl;
 
-            //auto tree_neighbors = new vector<pair<int, int> >();
-            bdm::array<int, 8> i_neighbors[512];
-
-//      for (int i = 0; i < 512; i++)
-//          for (int j = 0; j < 512; j++)
-//              if (i != j)
-//              {
-//                  //tree_neighbors->push_back(std::make_pair(i, j));
-//                  std::cout << i << ", " << j << ", (" << neighbor_counter[i] << ", " << neighbor_counter[j] << std::endl;
-//
-//                  if (i == j + 1 || i + 1 == j)
-//                  {
-//                      i_neighbors[i][neighbor_counter[i]++] = j;
-//                      i_neighbors[j][neighbor_counter[j]++] = i;
-//                  }
-//              }
-
+            bdm::array<int, 8> * i_neighbors = new bdm::array<int, 8>[cells->elements()];
 
             auto tree_neighbors = tree->get_neighbors_with_points(25);
             int amount_of_pairs = tree_neighbors->size();
-            //pair<pair<point, size_t>, pair<point, size_t> > * tree_neighbors_array =
-            //    new pair<pair<point, size_t>, pair<point, size_t> >[amount_of_pairs];
-            //std::copy(tree_neighbors->begin(), tree_neighbors->end(), tree_neighbors_array);
 
-
-            std::cout << "Sista " << tree_neighbors->size() << std::endl;
             for (int i = 0; i < amount_of_pairs; i++) {
                 size_t neighbor_a = (*tree_neighbors)[i].first.second;
                 size_t neighbor_b = (*tree_neighbors)[i].second.second;
-//      const auto vector_idx_a = neighbor_a / VcBackend::kVecLen;
-//      const auto scalar_idx_a = neighbor_a % VcBackend::kVecLen;
-//      const auto vector_idx_b = neighbor_b / VcBackend::kVecLen;
-//      const auto scalar_idx_b = neighbor_b % VcBackend::kVecLen;
-
-                //std::cout << neighbor_a << ", " << neighbor_b << ", (" << neighbor_counter[neighbor_a] << ", " << neighbor_counter[neighbor_b] << std::endl;
-                i_neighbors[neighbor_a][neighbor_counter[neighbor_a]++] = neighbor_b;
-                i_neighbors[neighbor_b][neighbor_counter[neighbor_b]++] = neighbor_a;
-
-                if (neighbor_counter[neighbor_a] >= 8 || neighbor_counter[neighbor_b] >= 8) {
-                    std::cout << "!!!";
-                }
-                // std::cout << "?" << std::endl;
-//      neighbors[vector_idx_a][scalar_idx_a][neighbor_counter[neighbor_a]++] = neighbor_b;
-                // std::cout << "!" << std::endl;
-//      neighbors[vector_idx_b][scalar_idx_b][neighbor_counter[neighbor_b]++] = neighbor_a;
-                // std::cout << "¡" << std::endl;
+                if (neighbor_counter[neighbor_a] < 8)
+                    i_neighbors[neighbor_a][neighbor_counter[neighbor_a]++] = neighbor_b;
+                if  (neighbor_counter[neighbor_b] < 8)
+                    i_neighbors[neighbor_b][neighbor_counter[neighbor_b]++] = neighbor_a;
             }
-            std::cout << "Braza" << std::endl;
             for (size_t i = 0; i < cells->elements(); i++) {
                 const auto vector_idx = i / VcBackend::kVecLen;
                 const auto scalar_idx = i % VcBackend::kVecLen;
                 neighbors[vector_idx][scalar_idx] = std::move(i_neighbors[i]);
                 neighbors[vector_idx][scalar_idx].SetSize(neighbor_counter[i]);
             }
-            std::cout << "End" << std::endl;
             delete tree_neighbors;
             delete tree;
             delete[] neighbor_counter;
-            std::cout << "Free" << std::endl;
+            delete[] i_neighbors;
             // End of tree search
 
-            // calc neighbors
-//     std::cout << "number of elements " << cells->elements() << std::endl;
-//     #pragma omp parallel for
-//         for (size_t i = 0; i < cells->elements(); i++) {
-//           const auto vector_idx = i / VcBackend::kVecLen;
-//           const auto scalar_idx = i % VcBackend::kVecLen;
-//
-//           // fixme make param
-//           // according to roman 50 - 100 micron
-//           const VcBackend::real_t search_radius =
-//               static_cast<VcBackend::real_t>(distance_);
-//
-//           std::vector<std::pair<size_t, VcBackend::real_t> > ret_matches;
-//
-//           nanoflann::SearchParams params;
-//           params.sorted = false;
-//
-//           auto cell = cells->GetScalar(i);
-//           const auto& position = cell.GetPosition();
-//           const VcBackend::real_t query_pt[3] = {position[0][0], position[1][0],
-//                                                  position[2][0]};
-//
-//           // calculate neighbors
-//           const size_t n_matches =
-//               index.radiusSearch(&query_pt[0], search_radius, ret_matches, params);
-//
-//           // transform result (change data structure - remove self from list)
-//           bdm::array<int, 8> i_neighbors;
-//           i_neighbors.SetSize(n_matches - 1);
-//           size_t counter = 0;
-//           for (size_t j = 0; j < n_matches; j++) {
-//             if (ret_matches[j].first != i) {
-//               i_neighbors[counter++] = ret_matches[j].first;
-//             }
-//           }
-//           neighbors[vector_idx][scalar_idx] = std::move(i_neighbors);
-//         }
-
-            std::cout << "Update" << std::endl;
             // update neighbors
 #pragma omp parallel for
             for (size_t i = 0; i < cells->vectors(); i++) {
                 (*cells)[i].SetNeighbors(neighbors[i]);
             }
-            std::cout << "End" << std::endl;
         }
 
     private:
