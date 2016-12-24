@@ -16,7 +16,8 @@
 using std::pair;
 using std::make_pair;
 
-double const eps = 10e-20;
+double const eps = 1e-20;
+double const inf = 1e20;
 
 class point {
 private:

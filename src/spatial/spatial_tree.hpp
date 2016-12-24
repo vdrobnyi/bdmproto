@@ -159,7 +159,7 @@ void spatial_tree_node<T>::get_neighbors_(
         for (int i = 0; i < a_objs->size(); i++)
             for (int j = is_same ? (i + 1) : 0; j < b_objs->size(); j++)
                 if ((a_objs->at(i).first).sqdist(b_objs->at(j).first) <= distance)
-                    result->push_back(make_pair(a_objs->at(i).second, a_objs->at(j).second));
+                    result->push_back(make_pair(a_objs->at(i).second, b_objs->at(j).second));
     }
     else
     {

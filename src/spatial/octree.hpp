@@ -38,6 +38,7 @@ private:
 public:
     octree_node();
     octree_node(bound bnd, int max_depth, int max_amount_of_objects);
+    octree_node(int max_depth, int max_amount_of_objects);
     ~octree_node();
     virtual bool is_leaf();
     virtual void put(point p, T obj);
@@ -53,6 +54,19 @@ octree_node<T>::octree_node()
 }
 
 template <typename T>
+octree_node<T>::octree_node(int max_depth, int max_amount_of_objects)
+{
+    this->bnd = bound(-inf, -inf, -inf, inf, inf, inf);
+    this->is_leaf_node = true;
+    this->max_depth = max_depth;
+    this->max_amount_of_objects = max_amount_of_objects;
+    for (int i = 0; i < 8; i++)
+        children[i] = nullptr;
+    objects = new vector<pair<point, T> >();
+    is_leaf_node = true;
+}
+
+template <typename T>
 octree_node<T>::octree_node(bound bnd, int max_depth, int max_amount_of_objects)
 {
     this->bnd = bnd;
@@ -62,9 +76,6 @@ octree_node<T>::octree_node(bound bnd, int max_depth, int max_amount_of_objects)
     for (int i = 0; i < 8; i++)
         children[i] = nullptr;
     objects = new vector<pair<point, T> >();
-    
-    //objects->reserve(max_amount_of_objects);
-    
     is_leaf_node = true;
 }
 
