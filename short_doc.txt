@@ -1,0 +1,47 @@
+This short documentation's purpose is to give an insight into this little library structure and give a short overview on main classes.
+
+I. Spatial_tree.hpp
+
+It is a core class, which provides with variety of virtual functions for children-type trees and an implemented search neighbours function, which is common for all the trees.
+
+Virtual functions:
+    virtual spatial_tree_node<T> ** get_children() = 0;
+    virtual int get_children_size() = 0;
+    virtual vector<pair<point, T> > * get_objects() = 0;
+    virtual ~spatial_tree_node() {}
+    virtual bool is_leaf() = 0;
+    virtual void put(point p, T obj) = 0;
+
+Interface for search function:
+
+void spatial_tree_node<T>::get_neighbors_(
+                                            spatial_tree_node<T> * A,
+                                            spatial_tree_node<T> * B,
+                                            double distance,
+                                            vector<pair<pair<point, T>, pair<point, T> > > * result)
+
+Where  double distance is the distance within which we should search, A and B are nodes of the tree, and we are searching such pairs, where distance criteria is held. vector<pair<pair<point, T>, pair<point, T> > > * result is where we save retrieved data.
+
+II. Octree
+
+Octree is the most strainghtforward tree implementation, in which each node is divided in 8 equal chilren nodes. 
+
+The main interest, as for all trees, is "void octree_node<T>::put(point p, T obj)" function. At the current moment of time we defined splitting criteria as number of objects in the node. When this threshold is overflown, node is splitted, with the function "void octree_node<T>::split()".
+
+III. kd_tree.h
+
+Represents second and at the moment the most efficient data structure. It has variety of splitting methods, which can be chosen with the constructor "kd_tree_node(bound bnd, int max_depth, int max_amount_of_objects, int split)", where parameter "split" can have this values: 0-mediana split on varying axis, in order x, y, z; 1-mediana split on a single x axis, 2 - center split on varying axis, in order x, y, z, 3- split with surfce area heuristics(not useful at the moment, but may be usful with bulk loading).
+
+The way of "void octree_node<T>::put(point p, T obj)" is the same, and the used split function is defined with the constructor paramete, described above.
+
+IV. r_tree.h
+
+As this type of trees has shown the worst result at the moment, we are going to change this class in January.
+
+V. utils.hpp
+
+Set of helpful functions to work with points and bounds,
+
+VI. tests.cpp
+
+This is a class where we held all our experiments. Basically, testing and comparison of trees' performance with bruteforce method.
