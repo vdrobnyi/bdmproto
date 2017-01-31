@@ -2,6 +2,8 @@
 // Created by Ilya Dmitrenok on 19.10.16.
 //
 
+
+
 #ifndef kd_tree_hpp
 #define kd_tree_hpp
 
@@ -16,6 +18,12 @@ const int N = 32;
 const int ct = 1;
 const int ci = 1;
 
+/**
+ * Spatial tree descendant.
+ * Implements k-d tree. It organizes number of points in space with k dimensions.
+ * Provides different types of splitting space criterias
+ * @tparam T - type of the object to be stored in the tree
+ */
 template <typename T>
 class kd_tree_node: public spatial_tree_node<T>
 {
@@ -99,12 +107,25 @@ public:
 
 };
 
+/**
+ * Empty constructor, initializes with bounds (0, 0, 0, 1, 1, 1),
+ * maximum depth 10,
+ * maximum amount of objects within 1 node 1000
+ * @tparam T - type of the object to be stored in the tree
+ */
 template <typename T>
 kd_tree_node<T>::kd_tree_node()
 {
     kd_tree_node<T>(bound(0, 0, 0, 1, 1, 1), 10, 1000);
 }
-
+/**
+ * Constructor
+ * @tparam T  - type of the object to be stored in the tree
+ * @param bnd - bound of the node
+ * @param max_depth - maximum possible depth of the tree. After reaching that point, nodes won't split
+ * @param max_amount_of_objects - maximum number of object which can be stored in 1 node.
+ * In our case, amount of object acts as splitting criteria
+ */
 template <typename T>
 kd_tree_node<T>::kd_tree_node(bound bnd, int max_depth, int max_amount_of_objects)
 {
@@ -120,6 +141,18 @@ kd_tree_node<T>::kd_tree_node(bound bnd, int max_depth, int max_amount_of_object
     this->axis = 0;
 }
 
+/**
+ * Constructor
+ * @tparam T  - type of the object to be stored in the tree
+ * @param bnd - bound of the node
+ * @param max_depth - maximum possible depth of the tree. After reaching that point, nodes won't split
+ * @param max_amount_of_objects - maximum number of object which can be stored in 1 node.
+ * @param split - indicates what type of split will we use to split the space
+ * 0 - mediana split on varying axis, in order x, y, z;
+ * 1 - mediana split on a single x axis;
+ * 2 - center split on varying axis, in order x, y, z;
+ * 3- split with surfce area heuristics(not useful at the moment, but may be usful with bulk loading).
+ */
 template <typename T>
 kd_tree_node<T>::kd_tree_node(bound bnd, int max_depth, int max_amount_of_objects, int split)
 {
@@ -136,6 +169,10 @@ kd_tree_node<T>::kd_tree_node(bound bnd, int max_depth, int max_amount_of_object
     this->split_ = split;
 }
 
+/**
+ * destructor
+ * @tparam T
+ */
 template <typename T>
 kd_tree_node<T>::~kd_tree_node()
 {
@@ -154,16 +191,23 @@ kd_tree_node<T>::~kd_tree_node()
 }
 
 /**
- * REVIEW!
- * @param p
- * @param obj
+ * Adds new object to the tree
+ * @param p - position of the new object
+ * @param obj - object itself
  */
 template <typename T>
 void kd_tree_node<T>::put(point p, T obj)
 {
+    //If a leaf node - put there or split, else - proceed to according child node
     if (is_leaf_node)
     {
-        // Insert
+        /** Put if maximum number of objects in a node don't exceed threshold
+         * OR
+         * if maximum depth was reached
+         * ELSE
+         * split node with, according to split parameter
+         */
+
         if (objects->size() < max_amount_of_objects || (max_depth == 0))
         {
             objects->push_back(make_pair(p, obj));
@@ -199,6 +243,7 @@ void kd_tree_node<T>::put(point p, T obj)
 
 /**
  * Split point differs each partition in order XYZ
+ * Split point is median between all points on the axis
  */
 template <typename T>
 void kd_tree_node<T>::split()
@@ -268,6 +313,7 @@ void kd_tree_node<T>::split()
 
 /**
  * Split point only on X axis
+ * Split point is median between all points on the axis
  */
 template <typename T>
 void kd_tree_node<T>::split_on_single_x_median()
@@ -305,7 +351,8 @@ void kd_tree_node<T>::split_on_single_x_median()
 
 
 /**
- * Split point calculated using surface area heuristics (BAD)
+ * Split point calculated using surface area heuristics
+ * Not useful at the moment as its main purpose is bulk loading
  */
 template <typename T>
 void kd_tree_node<T>::split_with_sah()
@@ -438,6 +485,11 @@ void kd_tree_node<T>::split_with_center()
 
 }
 
+/**
+ * Returns children nodes
+ * @tparam T
+ * @return
+ */
 template <typename T>
 spatial_tree_node<T> ** kd_tree_node<T>::get_children()
 {
@@ -488,7 +540,7 @@ bool kd_tree_node<T>::is_leaf()
 
 
 /**
- *
+ * Gets point, which we use for surface area heuristics
  * @param axis - on what axis are we separating: x=0,y=1,z=2
  * @param num - what parttion are we on (1;N)
  * @return sah rating
@@ -502,7 +554,6 @@ point kd_tree_node<T>::get_sah_split_point()
     int axis = 0;
 
     bound bnd = this->bnd;
-
 
     for(pair<point, T> &i: *objects){
         objects_count[(int)fmod(i.first.x, N)];
@@ -593,8 +644,8 @@ point kd_tree_node<T>::get_sah_split_point()
 
 
 /**
- * gets median of the box on X parameter. To be considered
- * @return
+ * calculates median point for a certain axis
+ * @return median on certain axis
  */
 template <typename T>
 point kd_tree_node<T>::get_median() {
@@ -617,6 +668,7 @@ point kd_tree_node<T>::get_median() {
     this->median = sorted->at(sorted->size()/2).first;
     return sorted->at(sorted->size()/2).first;
 }
+
 template <typename T>
 point kd_tree_node<T>::get_median_on_x() {
     vector<pair<point, T> > * sorted = this->objects;

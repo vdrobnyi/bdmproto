@@ -6,6 +6,12 @@
 //  Copyright © 2016 Victor Drobny. All rights reserved.
 //
 
+
+/**
+ * Is a core class, which provides with variety of virtual
+ * functions for children-type trees and an implemented search neighbours function,
+ * which is common for all the trees.
+ */
 #ifndef spatial_tree_hpp
 #define spatial_tree_hpp
 
@@ -51,6 +57,11 @@ public:
     virtual vector<pair<T, T> > * get_neighbors(double distance);
 };
 
+/**
+ *
+ * @tparam T - type of the object
+ * @return bounds of the node
+ */
 template <typename T>
 bound spatial_tree_node<T>::get_bound()
 {
@@ -65,7 +76,12 @@ vector<pair<pair<point, T>, pair<point, T> > > * spatial_tree_node<T>::get_neigh
     return result;
 }
 
-
+/**
+ *
+ * @tparam T - type of the object
+ * @param distance - distance to search within
+ * @return
+ */
 template <typename T>
 vector<pair<T, T> > * spatial_tree_node<T>::get_neighbors(double distance)
 {
@@ -74,14 +90,28 @@ vector<pair<T, T> > * spatial_tree_node<T>::get_neighbors(double distance)
     return result;
 }
 
-
+/**
+ * Makes pair, using points and objects
+ * @tparam T - type of the object
+ * @param p1 - point, indicates location of 1st object
+ * @param o1 - 1st object
+ * @param p2 - point, indicates location of 2nd object
+ * @param o2 - 2nd object
+ * @return pair of neighbors
+ */
 template <typename T>
 pair<pair<point, T>, pair<point, T> > make_neighbor_pair(point p1, T o1, point p2, T o2)
 {
     return make_pair(make_pair(p1, o1), make_pair(p2, o2));
 }
 
-
+/**
+ *
+ * @tparam T - type of the object
+ * @param p1 - 1st object pair(location point, object)
+ * @param p2 - 2nd object pair(location point, object)
+ * @return pair of neighbors
+ */
 template <typename T>
 pair<pair<point, T>, pair<point, T> > make_neighbor_pair(pair<point, T> p1, pair<point ,T> p2)
 {
@@ -89,6 +119,14 @@ pair<pair<point, T>, pair<point, T> > make_neighbor_pair(pair<point, T> p1, pair
 }
 
 
+/**
+ * Neighbour search function
+ * @tparam T
+ * @param A - node of the tree
+ * @param B - node of the tree
+ * @param distance - finding neighbors within that distance
+ * @param result - container, where we save retrieved data (all neighbor pairs)
+ */
 template <typename T>
 void spatial_tree_node<T>::get_neighbors_(
                                             spatial_tree_node<T> * A,

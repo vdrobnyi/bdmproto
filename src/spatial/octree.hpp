@@ -16,7 +16,11 @@
 
 using std::vector;
 using std::make_pair;
-
+/**
+ * Spatial tree descendant.
+ * Implements octree. It organizes number of points in space with 8 dimensions.
+ * @tparam T - type of the object to be stored in the tree
+ */
 template <typename T>
 class octree_node: public spatial_tree_node<T>
 {
@@ -47,12 +51,25 @@ public:
 };
 
 
+/**
+ * Empty constructor, initializes with bounds (0, 0, 0, 1, 1, 1),
+ * maximum depth 10,
+ * maximum amount of objects within 1 node 1000
+ * @tparam T - type of the object to be stored in the tree
+ */
 template <typename T>
 octree_node<T>::octree_node()
 {
     octree_node<T>(bound(0, 0, 0, 1, 1, 1), 10, 1000);
 }
 
+/**
+ * Constructor
+ * @tparam T  - type of the object to be stored in the tree
+ * @param max_depth - maximum possible depth of the tree. After reaching that point, nodes won't split
+ * @param max_amount_of_objects - maximum number of object which can be stored in 1 node.
+ * In our case, amount of object acts as splitting criteria
+ */
 template <typename T>
 octree_node<T>::octree_node(int max_depth, int max_amount_of_objects)
 {
@@ -66,6 +83,14 @@ octree_node<T>::octree_node(int max_depth, int max_amount_of_objects)
     is_leaf_node = true;
 }
 
+/**
+ * Constructor
+ * @tparam T  - type of the object to be stored in the tree
+ * @param bnd - bound of the node
+ * @param max_depth - maximum possible depth of the tree. After reaching that point, nodes won't split
+ * @param max_amount_of_objects - maximum number of object which can be stored in 1 node.
+ * In our case, amount of object acts as splitting criteria
+ */
 template <typename T>
 octree_node<T>::octree_node(bound bnd, int max_depth, int max_amount_of_objects)
 {
@@ -79,7 +104,10 @@ octree_node<T>::octree_node(bound bnd, int max_depth, int max_amount_of_objects)
     is_leaf_node = true;
 }
 
-
+/**
+ * destructor
+ * @tparam T - type of the object to be stored in the tree
+ */
 template <typename T>
 octree_node<T>::~octree_node()
 {
@@ -105,7 +133,11 @@ bool octree_node<T>::is_leaf()
     return is_leaf_node;
 }
 
-
+/**
+ * Adds new object to the tree
+ * @param p - position of the new object
+ * @param obj - object itself
+ */
 template <typename T>
 void octree_node<T>::put(point p, T obj)
 {
@@ -127,7 +159,10 @@ void octree_node<T>::put(point p, T obj)
 
 }
 
-
+/**
+ * Splits node to 8 equal subspaces
+ * @tparam T - type of objects
+ */
 template <typename T>
 void octree_node<T>::split()
 {
@@ -171,7 +206,12 @@ void octree_node<T>::split()
     this->is_leaf_node = false;
 }
 
-
+/**
+ * returns in what octa subspace point p is located
+ * @tparam T - type of the object
+ * @param p - point in space
+ * @return number of subspace
+ */
 template <typename T>
 int octree_node<T>::get_child_id(point p)
 {
